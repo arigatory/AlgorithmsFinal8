@@ -1,4 +1,5 @@
-﻿using System;
+﻿// https://contest.yandex.ru/contest/26133/run-report/69152546/
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -21,14 +22,17 @@ namespace B_CheatSheet
     {
         private static TextReader _reader;
         private static TextWriter _writer;
-        private static HashSet<int>[] _set;
+        private static List<int>[] _possibleEnds;
+        private static bool?[] _cache;
+        private static bool _foundCorrectBreak = false;
 
         public static void Main(string[] args)
         {
             InitialiseStreams();
             var s = _reader.ReadLine();
             var n = ReadInt();
-            _set = new HashSet<int>[s.Length];
+            _possibleEnds = new List<int>[s.Length];
+            _cache = new bool?[s.Length];
 
             Node root = new Node(default(char));
 
@@ -68,38 +72,37 @@ namespace B_CheatSheet
 
         private static bool Ok(string s, int start, Node root)
         {
-            //_writer.WriteLine($"Processing substing: {s.Substring(start)}");
+            if (_foundCorrectBreak)
+                return true;
+            if (_cache[start].HasValue)
+            {
+                return _cache[start].Value;
+            }
             if (start >= s.Length)
                 return false;
             var ends = GetStringEnds(s, start, root);
-            if (ends.Contains(s.Length - 1))
+
+            foreach (var end in ends)
             {
-                //_writer.WriteLine($"Found end! {s[s.Length - 1]}");
-                return true;
-            }
-            else
-            {
-                foreach (var end in ends)
+                var tempResult = Ok(s, end + 1, root);
+                if (tempResult)
                 {
-                    var tempResult = Ok(s, end + 1, root);
-                    if (tempResult)
-                    {
-                        return true;
-                    }
+                    _cache[start] = true;
+                    return true;
                 }
             }
 
+            _cache[start] = false;
             return false;
         }
 
-        private static HashSet<int> GetStringEnds(string s, int start, Node root)
+        private static List<int> GetStringEnds(string s, int start, Node root)
         {
-            //_writer.WriteLine("\nPossible ends: ");
-            if (_set[start] != null)
+            if (_possibleEnds[start] != null)
             {
-                return _set[start];
+                return _possibleEnds[start];
             }
-            var result = new HashSet<int>();
+            var result = new List<int>();
             var currentNode = root;
             for (int i = start; i < s.Length; i++)
             {
@@ -108,17 +111,21 @@ namespace B_CheatSheet
                     currentNode = currentNode.NextChars[s[i]];
                     if (currentNode.IsTerminal)
                     {
-                        //_writer.WriteLine($" {i} ");
+                        _possibleEnds[start] = result;
                         result.Add(i);
+                        if (i == s.Length - 1)
+                        {
+                            _foundCorrectBreak = true;
+                            return result;
+                        }
                     }
                 }
                 else
                 {
-                    //_writer.WriteLine($"\nMove after {i} impossible\n");
                     return result;
                 }
             }
-            _set[start] = result;
+            _possibleEnds[start] = result;
             return result;
 
         }
