@@ -1,4 +1,11 @@
 ﻿// https://contest.yandex.ru/contest/26133/run-report/69152546/
+//
+
+// Спасибо за замечания, постарался все участь.
+// С рекурсией чуть быстрее алгоритм получился:
+// https://contest.yandex.ru/contest/26133/run-report/69167205/
+// Зато с помощью динамического программирования меньше памяти расходуется:
+// https://contest.yandex.ru/contest/26133/run-report/69167412/
 
 /*
 -- ПРИНЦИП РАБОТЫ --
@@ -34,14 +41,8 @@ namespace B_CheatSheet
 {
     public class Node
     {
-        public char Value { get; set; }
         public bool IsTerminal { get; set; } = false;
         public Dictionary<char, Node> NextChars { get; set; } = new Dictionary<char, Node>();
-
-        public Node(Char ch)
-        {
-            Value = ch;
-        }
     }
 
 
@@ -49,19 +50,16 @@ namespace B_CheatSheet
     {
         private static TextReader _reader;
         private static TextWriter _writer;
-        private static List<int>[] _possibleEnds;
-        private static bool?[] _cache;
-        private static bool _foundCorrectBreak = false;
+        private static bool[] dp;
 
         public static void Main(string[] args)
         {
             InitialiseStreams();
             var s = _reader.ReadLine();
             var n = ReadInt();
-            _possibleEnds = new List<int>[s.Length];
-            _cache = new bool?[s.Length];
+            dp = new bool[s.Length];
 
-            Node root = new Node(default(char));
+            Node root = new Node();
 
             for (var i = 0; i < n; i++)
             {
@@ -75,7 +73,7 @@ namespace B_CheatSheet
                     }
                     else
                     {
-                        var tempNode = new Node(word[j]);
+                        var tempNode = new Node();
                         currentNode.NextChars[word[j]] = tempNode;
                         currentNode = tempNode;
                     }
@@ -84,7 +82,7 @@ namespace B_CheatSheet
             }
 
 
-            if (Ok(s, 0, root))
+            if (Ok(s, root))
             {
                 _writer.WriteLine("YES");
             }
@@ -97,38 +95,36 @@ namespace B_CheatSheet
         }
 
 
-        private static bool Ok(string s, int start, Node root)
+        private static bool Ok(string s, Node root)
         {
-            if (_foundCorrectBreak)
-                return true;
-            if (_cache[start].HasValue)
-            {
-                return _cache[start].Value;
-            }
-            if (start >= s.Length)
-                return false;
-            var ends = GetStringEnds(s, start, root);
-
+            var ends = GetStringEnds(s, 0, root);
             foreach (var end in ends)
             {
-                var tempResult = Ok(s, end + 1, root);
-                if (tempResult)
+                if (end < s.Length)
                 {
-                    _cache[start] = true;
-                    return true;
+                    dp[end] = true;
                 }
             }
-
-            _cache[start] = false;
-            return false;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (dp[i])
+                {
+                    ends = GetStringEnds(s, i+1, root);
+                    foreach (var end in ends)
+                    {
+                        if (end < s.Length)
+                        {
+                            dp[end] = true;
+                        }
+                    }
+                }
+                
+            }
+            return dp[s.Length - 1];
         }
 
         private static List<int> GetStringEnds(string s, int start, Node root)
         {
-            if (_possibleEnds[start] != null)
-            {
-                return _possibleEnds[start];
-            }
             var result = new List<int>();
             var currentNode = root;
             for (int i = start; i < s.Length; i++)
@@ -138,11 +134,9 @@ namespace B_CheatSheet
                     currentNode = currentNode.NextChars[s[i]];
                     if (currentNode.IsTerminal)
                     {
-                        _possibleEnds[start] = result;
                         result.Add(i);
                         if (i == s.Length - 1)
                         {
-                            _foundCorrectBreak = true;
                             return result;
                         }
                     }
@@ -152,9 +146,7 @@ namespace B_CheatSheet
                     return result;
                 }
             }
-            _possibleEnds[start] = result;
             return result;
-
         }
 
         private static void CloseStreams()
