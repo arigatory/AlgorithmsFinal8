@@ -1,4 +1,12 @@
 ﻿//https://contest.yandex.ru/contest/26133/run-report/69128051/
+//https://contest.yandex.ru/contest/26133/run-report/69167145/
+
+//  Комменарий из ревью:
+//ок, но здесь вроде можно и без бора если не хранить все строки а только 1 с которой сравниваешь текущую.
+// Ответ:
+// Спасибо за проверку и замечания. Я на самом деле храню не все строки, а только первую. Все следующие я начинаю помещать в бор,
+// но останавливаюсь, когда начинается ветвление. То есть как бы отсекаю остаток. Немного подправил, чтобы и первую строку обрезать,
+// после расхождения при сравнении. Ссылку на новую посылку во второй строке разместил.
 
 /*
 -- ПРИНЦИП РАБОТЫ --
@@ -33,7 +41,7 @@ namespace A_PackedPrefix
     public class Node
     {
         public char Value { get; set; }
-        public Dictionary<char,Node> NextChars { get; set; } = new Dictionary<char,Node>();
+        public Dictionary<char, Node> NextChars { get; set; } = new Dictionary<char, Node>();
 
         public Node(Char ch)
         {
@@ -73,19 +81,20 @@ namespace A_PackedPrefix
                         {
                             currentNode = currentNode.NextChars[decodedString[j]];
                         }
+                        else if (i != 0)
+                        {
+                            currentNode.NextChars = new Dictionary<char, Node>();
+                            break;
+                        }
                         else
                         {
                             var tempNode = new Node(decodedString[j]);
                             currentNode.NextChars[decodedString[j]] = tempNode;
                             currentNode = tempNode;
-                            if (i != 0)
-                            {
-                                break;
-                            }
                         }
                     }
                 }
-                
+
             }
 
             while (root.NextChars.Count == 1)
